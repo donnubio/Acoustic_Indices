@@ -194,3 +194,43 @@ def compute_acoustic_indices(filename,
 
 
     return d, file
+
+
+
+def spectrogram(filename,
+    freq_filter=None,
+    order_filter=8,
+    windowLength=512,
+    windowHop=512,
+    scale_audio=False,
+    square=False,
+    windowType='hamming',
+    centered=False,
+    normalized=True,
+    j_bin=5, # j_bin in seconds                             
+    dbg=False
+    ):
+
+    file = AudioFile(filename, verbose=dbg)
+
+    # Pre-processing -----------------------------------------------------------------------------------
+    if freq_filter is not None:
+        Wn = freq_filter/float(file.niquist)
+        [b,a] = signal.butter(order_filter, Wn, btype='highpass')
+        file.process_filtering(signal.filtfilt(b, a, file.sig_float))
+
+    # Compute Indices -----------------------------------------------------------------------------------
+
+
+    spectro, frequencies = compute_spectrogram(file, windowLength=windowLength,                                 
+                        windowHop=windowHop,
+                        scale_audio=scale_audio,
+                        square=square,
+                        windowType=windowType,
+                        centered=centered,
+                        normalized=normalized)
+
+    j_bin = int(j_bin * file.sr / windowHop) # transform j_bin in samples
+    t =np.arange(spectro.shape[1])/(spectro.shape[1]-1)*file.duration
+
+    return spectro, frequencies, t
