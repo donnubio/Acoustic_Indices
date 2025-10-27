@@ -24,10 +24,11 @@ def AcousticComplexityIndex(audio_data=None,file_name=None,
                                         normalized=True)
 
     #methodToCall = globals().get('compute_ACI')
-    j_bin = int(j_bin * audio_data.sr / windowHop) # transform j_bin in samples
-    main_value, temporal_values = compute_ACI(spectro, j_bin)
+    j_bin_samples = int(j_bin * audio_data.sr / windowHop) # transform j_bin in samples
+    main_value, temporal_values = compute_ACI(spectro, j_bin_samples)
     #aci = Index(index_name, temporal_values=temporal_values, main_value=main_value)
     t = np.arange(len(temporal_values)) * (j_bin/2)
+
     return main_value, temporal_values, t
 
 
@@ -38,7 +39,7 @@ def ApplyAcousticIndexToChunks(aindex_fun, audio_data=None, file_name=None, chun
         audio_data = AudioFile(file_name)
 
     chunk=deepcopy(audio_data)
-    main_value_clusters=[];  temporal_values_clusters=[]; t_clusters=[]
+    main_value_chanks=[];  temporal_values_clusters=[]; t_clusters=[]
     t_chunks = np.arange(0, audio_data.duration , chunk_lng_sec)
     for t1 in np.arange(0, audio_data.duration , chunk_lng_sec):
 
@@ -61,10 +62,10 @@ def ApplyAcousticIndexToChunks(aindex_fun, audio_data=None, file_name=None, chun
 
             main_value, temporal_values, t = aindex_fun( chunk, file_name=None, **kwargs)
             #print(main_value)
-            main_value_clusters.append(main_value)
+            main_value_chanks.append(main_value)
             temporal_values_clusters.append(temporal_values)
             t_clusters.append(t)
 
     t_centre_chunks = t_chunks + chunk_lng_sec/2            
 
-    return main_value_clusters, temporal_values_clusters, t_clusters, t_centre_chunks            
+    return main_value_chanks, temporal_values_clusters, t_clusters, t_centre_chunks            

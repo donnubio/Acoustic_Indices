@@ -8,6 +8,8 @@ import numpy as np
 from scipy.io.wavfile import read as wavread
 from scipy.io.wavfile import write as wavwrite
 from os.path import basename
+#from librosa import load
+import soundfile as sf
 
 
 def pcm2float(sig, dtype='float64'):
@@ -91,7 +93,7 @@ def float2pcm(sig, dtype='int16'):
 #------------------------------------------------------------------------
 class AudioFile(object):
 
-    def __init__(self, file_path, verbose=False):
+    def __init__(self, file_path, verbose=False, adtype='int16'):
 
         default_channel = 0  # Used channel if the audio file contains more than one channel
         #default_channel = 1
@@ -99,7 +101,9 @@ class AudioFile(object):
         if verbose:
             print('Read the audio file:', file_path)
         try:
-            sr, sig = wavread(file_path)
+            #sr, sig = wavread(file_path)
+            #sig,sr = load(file_path,sr=None)
+            sig, sr = sf.read(file_path, dtype=adtype)
         except IOError:
             print("Error: can\'t read the audio file:", file_path)
         else:
