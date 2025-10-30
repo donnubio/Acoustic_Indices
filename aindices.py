@@ -185,6 +185,7 @@ def ApplyAcousticIndexToChunks(aindex_fun,
                                audio_data=None, 
                                file_name=None, 
                                chunk_lng_sec=60, 
+                               chunk_lng_error_pct=5,
                                out_args_type='main_temporal',# 'main'
                                **kwargs):
 
@@ -193,7 +194,7 @@ def ApplyAcousticIndexToChunks(aindex_fun,
 
     chunk=deepcopy(audio_data)
     main_value_chanks=[];  temporal_values_clusters=[]; t_clusters=[]
-    t_chunks = np.arange(0, audio_data.duration , chunk_lng_sec)
+    t_chunks = []
     for t1 in np.arange(0, audio_data.duration , chunk_lng_sec):
 
             #t1,t2=t-chunk_lng_sec,t+chunk_lng_sec
@@ -206,12 +207,19 @@ def ApplyAcousticIndexToChunks(aindex_fun,
             if i2>len(audio_data.sig_int):
                 i2=len(audio_data.sig_int)
                 t2=audio_data.duration
+
             # if dbg: print("t: ",t1,t2,i1,i2)
             # print("t: ",t1,t2,i1,i2,audio_data.duration)
             chunk.sig_int = audio_data.sig_int[i1:i2]
             chunk.sig_float = audio_data.sig_float[i1:i2]
             chunk.duration = len(chunk.sig_int)/float(chunk.sr)
-            chunk.indices = dict()  # empty dictionary of Index    
+            chunk.indices = dict()  # empty dictionary of Index  
+            
+            # check if chunk length is aproximately equal to chunk_lng_sec
+            if np.abs(chunk.duration - chunk_lng_sec) > chunk_lng_sec * chunk_lng_error_pct / 100:
+                break
+
+            t_chunks.append(t1)
 
             main_value, temporal_values, t = None, None, None
             if out_args_type=='main_temporal':
@@ -223,7 +231,7 @@ def ApplyAcousticIndexToChunks(aindex_fun,
             temporal_values_clusters.append(temporal_values)
             t_clusters.append(t)
 
-    t_centre_chunks = t_chunks + chunk_lng_sec/2            
+    t_centre_chunks = np.array(t_chunks) + chunk_lng_sec/2            
 
     return main_value_chanks, temporal_values_clusters, t_clusters, t_centre_chunks         
 
@@ -258,6 +266,7 @@ def AcousticIndicesBanch(input_folder,
 
     for file in files:
 
+        print(file)
         datt = get_date_time_from_filename(file)
 
         audio_data = AudioFile(file)
