@@ -176,6 +176,72 @@ def AcousticEvennessIndex(audio_data=None,file_name=None,
     return main_value
 
 
+###################### SE SpectralEntropy ###################
+
+def SpectralEntropy(audio_data=None,file_name=None,
+                        windowLength=512,
+                        windowHop=256,
+                        windowType='hann',
+                        ):
+    
+    if audio_data is None:
+        audio_data = AudioFile(file_name)
+
+
+    spectro, _ = compute_spectrogram(audio_data, 
+                                    windowLength=windowLength,
+                                    windowHop=windowHop,
+                                    scale_audio=True,
+                                    square=False,
+                                    windowType=windowType,
+                                    centered=False,
+                                    normalized=False)
+
+    main_value = compute_SH(spectro)
+
+    return main_value
+
+
+###################### SE SpectralEntropy ###################
+
+def SpectralEntropy(audio_data=None,file_name=None,
+                        windowLength=512,
+                        windowHop=256,
+                        windowType='hann',
+                        ):
+    
+    if audio_data is None:
+        audio_data = AudioFile(file_name)
+
+
+    spectro, _ = compute_spectrogram(audio_data, 
+                                    windowLength=windowLength,
+                                    windowHop=windowHop,
+                                    scale_audio=True,
+                                    square=False,
+                                    windowType=windowType,
+                                    centered=False,
+                                    normalized=False)
+
+    main_value = compute_SH(spectro)
+
+    return main_value
+
+
+###################### SE TemporalEntropy ###################
+
+def TemporalEntropy(audio_data=None,file_name=None):
+    
+    if audio_data is None:
+        audio_data = AudioFile(file_name)
+
+    main_value = compute_TH(audio_data, integer=True) #if true, use an audio signal of integers
+
+    return main_value
+
+
+
+
 #################################################################################
 ############################### tools        ####################################
 #################################################################################
@@ -248,7 +314,8 @@ def get_date_time_from_filename(filename):
 
 def AcousticIndicesBanch(input_folder,
                         extension="*.flac",
-                        chunk_lng_sec = 60):
+                        chunk_lng_sec = 60,
+                        filename_intermid_res = None):
     
     '''
     For audio files in the folder `input_folder` with extension `extension`, 
@@ -260,13 +327,16 @@ def AcousticIndicesBanch(input_folder,
     '''
     
 
-
     files = glob.glob(os.path.join(input_folder, extension))
+    files = np.sort(files)
     data = []
+
+    if filename_intermid_res is not None:
+        Path(filename_intermid_res).parent.mkdir(exist_ok=True)
 
     for file in files:
 
-        print(file)
+        #print(file)
         datt = get_date_time_from_filename(file)
 
         audio_data = AudioFile(file)
@@ -293,7 +363,19 @@ def AcousticIndicesBanch(input_folder,
                                                 NormalizedDifferenceSoundIndex, 
                                                 audio_data, file_name=None,
                                                 chunk_lng_sec=chunk_lng_sec,
-                                                out_args_type='main')          
+                                                out_args_type='main') 
+        se_main_val_chunks,temporal_val_clust,t_clust,t_chunks = ApplyAcousticIndexToChunks(
+                                                SpectralEntropy, 
+                                                audio_data, file_name=None,
+                                                chunk_lng_sec=chunk_lng_sec,
+                                                out_args_type='main')    
+        te_main_val_chunks,temporal_val_clust,t_clust,t_chunks = ApplyAcousticIndexToChunks(
+                                                TemporalEntropy, 
+                                                audio_data, file_name=None,
+                                                chunk_lng_sec=chunk_lng_sec,
+                                                out_args_type='main')     
+        ae_main_val_chunks = np.array(se_main_val_chunks)*np.array(te_main_val_chunks) #Acoustic Entropy Index             
+
         
         data.append({
             'datetime': datt,
@@ -302,23 +384,44 @@ def AcousticIndicesBanch(input_folder,
             'ADI_mn': np.mean(adi_main_val_chunks),
             'AEI_mn': np.mean(aei_main_val_chunks),
             'BI_mn': np.mean(bi_main_val_chunks),
-            'NDSI_mn': np.mean(ndsi_main_val_chunks),        
+            'NDSI_mn': np.mean(ndsi_main_val_chunks),     
+            'Hf_mn': np.mean(se_main_val_chunks),
+            'Ht_mn': np.mean(te_main_val_chunks),
+            'H_mn': np.mean(ae_main_val_chunks),                    
             'ACI_sd': np.std(aci_main_val_chunks),
             'ADI_sd': np.std(adi_main_val_chunks),
             'AEI_sd': np.std(aei_main_val_chunks),
             'BI_sd': np.std(bi_main_val_chunks),
             'NDSI_sd': np.std(ndsi_main_val_chunks),        
+            'Hf_sd': np.std(se_main_val_chunks),
+            'Ht_sd': np.std(te_main_val_chunks),
+            'H_sd': np.std(ae_main_val_chunks),             
             'ACI_md': np.median(aci_main_val_chunks),
             'ADI_md': np.median(adi_main_val_chunks),
             'AEI_md': np.median(aei_main_val_chunks),
             'BI_md': np.median(bi_main_val_chunks),
-            'NDSI_md': np.median(ndsi_main_val_chunks),    
+            'NDSI_md': np.median(ndsi_main_val_chunks), 
+            'Hf_md': np.median(se_main_val_chunks),
+            'Ht_md': np.median(te_main_val_chunks),
+            'H_md': np.median(ae_main_val_chunks),    
             'ACI_q': np.quantile(aci_main_val_chunks, [0.25, 0.75]),
             'ADI_q': np.quantile(adi_main_val_chunks, [0.25, 0.75]),
             'AEI_q': np.quantile(aei_main_val_chunks, [0.25, 0.75]),
             'BI_q': np.quantile(bi_main_val_chunks, [0.25, 0.75]),
-            'NDSI_q': np.quantile(ndsi_main_val_chunks, [0.25, 0.75])                           
+            'NDSI_q': np.quantile(ndsi_main_val_chunks, [0.25, 0.75]),   
+            'Hf_q': np.quantile(se_main_val_chunks, [0.25, 0.75]),
+            'Ht_q': np.quantile(te_main_val_chunks, [0.25, 0.75]),
+            'H_q': np.quantile(ae_main_val_chunks, [0.25, 0.75]),                 
+            'file':file ,
+            'name':Path(file).name,
+            'stem':Path(file).stem                   
         })
+        
+        if filename_intermid_res is not None:
+            df_tmp=pd.DataFrame(data)
+            df_tmp.to_csv(filename_intermid_res)
+            print(len(files)-len(df_tmp))
+
         
     df = pd.DataFrame(data)
 
