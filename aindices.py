@@ -315,7 +315,8 @@ def get_date_time_from_filename(filename):
 def AcousticIndicesBanch(input_folder,
                         extension="*.flac",
                         chunk_lng_sec = 60,
-                        filename_intermid_res = None):
+                        filename_intermid_res = None,
+                        skip_existed_results=False):
     
     '''
     For audio files in the folder `input_folder` with extension `extension`, 
@@ -334,7 +335,23 @@ def AcousticIndicesBanch(input_folder,
     if filename_intermid_res is not None:
         Path(filename_intermid_res).parent.mkdir(exist_ok=True)
 
+
+    if skip_existed_results and (filename_intermid_res is not None):
+        try:
+            data = pd.read_csv(filename_intermid_res)
+            data = [dict(row) for ind,row in data.iterrows()]
+            files_to_skip = [d['name'] for d in data]
+        except:
+            data = []
+            files_to_skip = []
+      
+
     for file in files:
+
+        if skip_existed_results and (filename_intermid_res is not None):
+            if Path(file).name in files_to_skip:
+                print(f"skip {Path(file).name}")
+                continue
 
         #print(file)
         datt = get_date_time_from_filename(file)
@@ -419,7 +436,7 @@ def AcousticIndicesBanch(input_folder,
         
         if filename_intermid_res is not None:
             df_tmp=pd.DataFrame(data)
-            df_tmp.to_csv(filename_intermid_res)
+            df_tmp.to_csv(filename_intermid_res,index=False)
             print(len(files)-len(df_tmp))
 
         
